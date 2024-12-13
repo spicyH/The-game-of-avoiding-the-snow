@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>눈덩이 피하기 게임</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #87CEEB;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Snowman and moon in the background */
+        .snowman {
+            position: absolute;
+            bottom: 30px;
+            left: 10%;
+            width: 100px;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .snowman .snowball {
+            width: 60px;
+            height: 60px;
+            background-color: white;
+            border-radius: 50%;
+            margin-bottom: 5px;
+        }
+
+        .snowman .snowball:nth-child(1) {
+            width: 80px;
+            height: 80px;
+        }
+
+        .snowman .snowball:nth-child(2) {
+            width: 60px;
+            height: 60px;
+        }
+
+        .snowman .snowball:nth-child(3) {
+            width: 40px;
+            height: 40px;
+        }
+
+        .moon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 100px;
+            height: 100px;
+            background-color: #F0E68C;
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+        }
+
+        #player {
+            width: 40px; /* Smaller size */
+            height: 40px; /* Smaller size */
+            background-color: yellow; /* Yellow color */
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 50%;
+        }
+
+        .snowball {
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+
+        .game-over, .finish {
+            font-size: 40px;
+            color: red;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 30px;
+            color: black;
+        }
+
+        #restart-button {
+            display: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: #ff6347;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: pointer;
+        }
+
+        #restart-button:hover {
+            background-color: #ff4500;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Snowman and Moon background -->
+    <div class="snowman">
+        <div class="snowball"></div>
+        <div class="snowball"></div>
+        <div class="snowball"></div>
+    </div>
+    <div class="moon"></div>
+
+    <div id="player"></div>
+    <div id="game-over" class="game-over" style="display: none;">Game Over!</div>
+    <div id="finish" class="finish" style="display: none;">FINISH!</div>
+    <div id="score">Score: 0</div>
+    <button id="restart-button" onclick="restartGame()">Restart Game</button>
+
+    <script>
+        const player = document.getElementById('player');
+        const gameOverMessage = document.getElementById('game-over');
+        const finishMessage = document.getElementById('finish');
+        const scoreDisplay = document.getElementById('score');
+        const restartButton = document.getElementById('restart-button');
+        let snowballs = [];
+        let score = 0;
+        let isGameOver = false;
+
+        let snowballSpeed = 3; // Initial snowball speed
+        let spawnInterval = 500; // Snowball spawn interval (ms)
+        let maxSnowballs = 1; // Initial max snowballs (reduced from 2 to 1)
+
+        // Snowball creation function
+        function createSnowball() {
+            if (isGameOver) return;
+
+            const snowball = document.createElement('div');
+            snowball.classList.add('snowball');
+            snowball.style.left = `${Math.random() * window.innerWidth}px`; // Random x position
+            snowball.style.top = `-30px`; // Start from the top
+            document.body.appendChild(snowball);
+            snowballs.push(snowball);
+        }
+
+        // Snowball movement function
+        function moveSnowballs() {
+            snowballs.forEach((snowball, index) => {
+                let top = parseFloat(snowball.style.top);
+                if (top < window.innerHeight) {
+                    snowball.style.top = `${top + snowballSpeed}px`; // Fall speed
+                } else {
+                    snowball.remove();
+                    snowballs.splice(index, 1);
+                    score++;  // Increase score when a snowball is dodged
+                    updateScore();
+                }
+
+                // Check for collision with player
+                if (top + 20 >= window.innerHeight - 50 &&  // Reduced collision height
+                    parseFloat(snowball.style.left) < parseFloat(player.style.left) + 40 &&
+                    parseFloat(snowball.style.left) + 20 > parseFloat(player.style.left)) { // Smaller snowball width
+                    endGame();
+                }
+            });
+        }
+
+        // End the game
+        function endGame() {
+            isGameOver = true;
+            gameOverMessage.style.display = 'block';
+            restartButton.style.display = 'block';
+            snowballs.forEach(snowball => snowball.remove());
+            snowballs = [];
+        }
+
+        // Finish the game at 1,000 points
+        function finishGame() {
+            isGameOver = true;
+            finishMessage.style.display = 'block';
+            restartButton.style.display = 'block';
+            snowballs.forEach(snowball => snowball.remove());
+            snowballs = [];
+        }
+
+        // Update score display
+        function updateScore() {
+            scoreDisplay.innerText = `Score: ${score}`;
+
+            // Check if the score reaches 1,000 and end the game
+            if (score >= 1000) {
+                finishGame();
+            }
+        }
+
+        // Move player with mouse
+        window.addEventListener('mousemove', (e) => {
+            if (isGameOver) return;
+            const playerWidth = player.offsetWidth;
+            player.style.left = `${e.clientX - playerWidth / 2}px`;
+        });
+
+        // Move player with arrow keys (left/right)
+        window.addEventListener('keydown', (e) => {
+            if (isGameOver) return;
+            const playerWidth = player.offsetWidth;
+            const playerLeft = parseFloat(player.style.left);
+            if (e.key === 'ArrowLeft' && playerLeft > 0) {
+                player.style.left = `${playerLeft - 20}px`;
+            } else if (e.key === 'ArrowRight' && playerLeft < window.innerWidth - playerWidth) {
+                player.style.left = `${playerLeft + 20}px`;
+            }
+        });
+
+        // Increase difficulty over time
+        function increaseDifficulty() {
+            if (isGameOver) return;
+
+            // Increase snowball count less frequently (every 10 points)
+            if (score % 10 === 0 && maxSnowballs < 3) { // Reduce max snowballs to 3
+                maxSnowballs++;
+            }
+
+            // Increase snowball speed
+            if (score % 15 === 0 && snowballSpeed < 6) {
+                snowballSpeed += 0.5;
+            }
+
+            // Decrease spawn interval slightly
+            if (score % 20 === 0 && spawnInterval > 150) {
+                spawnInterval -= 50;
+                clearInterval(spawnIntervalId);
+                spawnIntervalId = setInterval(createSnowball, spawnInterval);
+            }
+        }
+
+        // Set the interval for snowball creation
+        let spawnIntervalId = setInterval(createSnowball, spawnInterval);
+
+        // Main game loop for movement and difficulty increase
+        setInterval(() => {
+            moveSnowballs();  // Move snowballs
+            increaseDifficulty(); // Increase difficulty
+        }, 50); // Update every 50ms
+
+        // Restart the game
+        function restartGame() {
+            isGameOver = false;
+            score = 0;
+            snowballSpeed = 3;
+            maxSnowballs = 1;
+            spawnInterval = 500;
+            scoreDisplay.innerText = `Score: 0`;
+            gameOverMessage.style.display = 'none';
+            finishMessage.style.display = 'none';
+            restartButton.style.display = '
+
+
+
+
+
+
